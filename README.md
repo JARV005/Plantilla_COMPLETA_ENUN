@@ -84,3 +84,39 @@ async function uploadAllCSV(folderPath) {
 
 // Ejemplo de uso
 uploadAllCSV('./csv_folder');
+
+
+
+
+
+//
+
+
+-- Total pagado por cada cliente SELECT c.id AS customer_id, c.name AS customer_name, SUM(t.amount) AS total_paid FROM customers c JOIN transactions t ON c.id = t.customer_id GROUP BY c.id, c.name;
+
+app.get('/total-pagado', (req, res) => { const { customer_id } = req.query;
+
+const query = SELECT  c.id AS customer_id, c.name AS customer_name, SUM(t.amount) AS total_paid FROM customers c JOIN transactions t ON c.id = t.customer_id WHERE (? IS NULL OR c.id = ?) GROUP BY c.id, c.name;
+
+connection.execute(query, [customer_id || null, customer_id || null], (err, results) => { if (err) return res.status(500).json({ error: err.message }); res.json(results); }); });
+
+-- Facturas pendientes con información de cliente y transacción asociada
+
+SELECT i.id AS invoice_id, i.invoice_number, i.total_amount, i.amount_paid, (i.total_amount - i.amount_paid) AS pending_amount, c.id AS customer_id, c.name AS customer_name, t.id AS transaction_id, t.transaction_date, t.amount AS transaction_amount FROM invoices i JOIN customers c ON i.customer_id = c.id LEFT JOIN transactions t ON i.id = t.invoice_id WHERE i.amount_paid < i.total_amount;
+
+app.get('/facturas-pendientes', (req, res) => { const { customer_id } = req.query;
+
+const query = SELECT  i.id AS invoice_id, i.invoice_number, i.total_amount, i.amount_paid, (i.total_amount - i.amount_paid) AS pending_amount, c.id AS customer_id, c.name AS customer_name, t.id AS transaction_id, t.transaction_date, t.amount AS transaction_amount FROM invoices i JOIN customers c ON i.customer_id = c.id LEFT JOIN transactions t ON i.id = t.invoice_id WHERE i.amount_paid < i.total_amount AND (? IS NULL OR c.id = ?);
+
+connection.execute(query, [customer_id || null, customer_id || null], (err, results) => { if (err) return res.status(500).json({ error: err.message }); res.json(results); }); });
+
+-- Listado de transacciones por plataforma
+
+SELECT t.id AS transaction_id, t.platform, t.amount, t.transaction_date, c.id AS customer_id, c.name AS customer_name, i.id AS invoice_id, i.invoice_number FROM transactions t JOIN customers c ON t.customer_id = c.id JOIN invoices i ON t.invoice_id = i.id WHERE t.platform = 'Nequi'; -- Cambia 'Nequi' por la plataforma deseada
+
+app.get('/transacciones-plataforma', (req, res) => { const { platform } = req.query;
+
+const query = SELECT  t.id AS transaction_id, t.platform, t.amount, t.transaction_date, c.id AS customer_id, c.name AS customer_name, i.id AS invoice_id, i.invoice_number FROM transactions t JOIN customers c ON t.customer_id = c.id JOIN invoices i ON t.invoice_id = i.id WHERE (? IS NULL OR t.platform = ?);
+
+connection.execute(query, [platform || null, platform || null], (err, results) => { if (err) return res.status(500).json({ error: err.message }); res.json(results); }); });
+
